@@ -1,0 +1,162 @@
+import { useState } from "react";
+import { useData } from "../../context/DataContext";
+import { api } from "../../services/api";
+
+export default function AdminServices() {
+  const { services, addService, updateService, deleteService } = useData();
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState({ name: "", description: "", status: "Active", image: "", icon: "✨" });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const toggleStatus = async (id: number) => {
+    const s = services.find((x) => x.id === id);
+    if (!s) return;
+    try {
+      const newStatus = s.status === "Active" ? "Inactive" : "Active";
+      await updateService(id, { ...s, status: newStatus });
+    } catch (err) {
+      alert("Failed to toggle service status");
+    }
+  };
+
+  const handleEdit = (id: number) => {
+    const s = services.find((x: any) => x.id === id)!;
+    setForm({ name: s.name, description: s.description, status: s.status, image: s.image, icon: s.icon });
+    setEditId(id);
+    setSelectedFile(null);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm("Are you sure you want to delete this service?")) {
+      try {
+        await deleteService(id);
+      } catch (err) {
+        alert("Failed to delete service");
+      }
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      let imageUrl = form.image;
+      if (selectedFile) {
+        const uploadRes = await api.uploadFile(selectedFile);
+        imageUrl = uploadRes.url;
+      }
+
+      const payload = {
+        name: form.name,
+        icon: form.icon || "✨",
+        description: form.description,
+        image: imageUrl || "https://images.unsplash.com/photo-1702724758750-9ff8d50f02e5?w=600&h=400&fit=crop&auto=format",
+        status: form.status,
+      };
+
+      if (editId) {
+        await updateService(editId, payload);
+      } else {
+        await addService(payload);
+      }
+
+      setShowForm(false);
+      setEditId(null);
+      setForm({ name: "", description: "", status: "Active", image: "", icon: "✨" });
+      setSelectedFile(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to save service");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="p-6 md:p-8">
+      <div className="flex items-center justify-between mb-7">
+        <h1 className="font-serif text-2xl md:text-3xl">Services</h1>
+        <button onClick={() => { setShowForm(true); setEditId(null); setForm({ name: "", description: "", status: "Active", image: "", icon: "✨" }); setSelectedFile(null); }} className="btn-gold px-5 py-2.5 rounded-lg text-sm">+ Add Service</button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {services.map((svc) => (
+          <div key={svc.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: "#e2ddd6" }}>
+            <div className="aspect-video overflow-hidden">
+              <img src={svc.image} alt={svc.name} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{svc.icon}</span>
+                  <div className="font-semibold text-sm">{svc.name}</div>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ backgroundColor: svc.status === "Active" ? "#22c55e18" : "#ef444418", color: svc.status === "Active" ? "#22c55e" : "#ef4444" }}>
+                  {svc.status}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed mb-4" style={{ color: "#777770" }}>{svc.description ? svc.description.slice(0, 90) : ''}...</p>
+              <div className="flex gap-2">
+                <button onClick={() => toggleStatus(svc.id)} className="flex-1 py-2 rounded-lg text-xs font-medium border" style={{ borderColor: "#e2ddd6", color: "#444440" }}>
+                  {svc.status === "Active" ? "Deactivate" : "Activate"}
+                </button>
+                <button onClick={() => handleEdit(svc.id)} className="py-2 px-3 rounded-lg text-xs font-medium border" style={{ borderColor: "#e2ddd6", color: "#444440" }}>Edit</button>
+                <button onClick={() => handleDelete(svc.id)} className="py-2 px-3 rounded-lg text-xs font-medium border" style={{ borderColor: "#e2ddd6", color: "#ef4444" }}>Delete</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50">
+          <form onSubmit={handleSave} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-xl">{editId ? "Edit Service" : "Add Service"}</h2>
+              <button type="button" onClick={() => setShowForm(false)} className="w-8 h-8 flex items-center justify-center rounded-full" style={{ backgroundColor: "#f1f0ed" }}>✕</button>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1.5">Service Name *</label>
+              <input type="text" required placeholder="Aluminium Windows" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border text-sm" style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }} />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1.5">Icon Emoji</label>
+              <input type="text" placeholder="🪟" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border text-sm" style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }} />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1.5">Service Image (File or URL)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="w-full px-3 py-2.5 rounded-lg border text-sm mb-2"
+                style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }}
+              />
+              <input
+                type="text"
+                placeholder="Or image URL (https://...)"
+                value={form.image}
+                onChange={(e) => setForm({ ...form, image: e.target.value })}
+                className="w-full px-3 py-2.5 rounded-lg border text-sm"
+                style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }}
+              />
+              {form.image && <img src={form.image} alt="Preview" className="mt-2 h-20 rounded-lg object-cover" />}
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1.5">Detailed Description</label>
+              <textarea rows={4} required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border text-sm resize-none" style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }} />
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" disabled={saving} className="btn-gold flex-1 py-3 rounded-lg font-semibold">
+                {saving ? "Saving..." : "Save Service"}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-lg font-medium border" style={{ borderColor: "#e2ddd6" }}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
