@@ -1,5 +1,6 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 
@@ -8,15 +9,27 @@ const __dirname = path.dirname(__filename);
 
 // Persistent disk on Render is mounted at /data
 // /tmp for Vercel (ephemeral), local path for dev
-const dbPath = process.env.RENDER
-  ? path.join('/data', 'database.sqlite')
+const dbDir = process.env.RENDER
+  ? '/data'
   : process.env.VERCEL
-    ? path.join('/tmp', 'database.sqlite')
-    : path.resolve(__dirname, 'database.sqlite');
+    ? '/tmp'
+    : __dirname;
 
+const dbPath = path.join(dbDir, 'database.sqlite');
+
+// Ensure the directory exists before opening SQLite
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 const sqlite = sqlite3.verbose();
-export const db = new sqlite.Database(dbPath);
+export const db = new sqlite.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Failed to open database at', dbPath, err.message);
+    process.exit(1);
+  }
+  console.log(`SQLite connected at ${dbPath}`);
+});
 
 // Helper functions for Promise-based queries
 export const dbRun = (sql, params = []) => {
