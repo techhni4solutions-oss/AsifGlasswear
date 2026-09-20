@@ -6,10 +6,14 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// In Vercel serverless functions, use /tmp for writable SQLite database
-const dbPath = process.env.VERCEL
-  ? path.join('/tmp', 'database.sqlite')
-  : path.resolve(__dirname, 'database.sqlite');
+// Persistent disk on Render is mounted at /data
+// /tmp for Vercel (ephemeral), local path for dev
+const dbPath = process.env.RENDER
+  ? path.join('/data', 'database.sqlite')
+  : process.env.VERCEL
+    ? path.join('/tmp', 'database.sqlite')
+    : path.resolve(__dirname, 'database.sqlite');
+
 
 const sqlite = sqlite3.verbose();
 export const db = new sqlite.Database(dbPath);

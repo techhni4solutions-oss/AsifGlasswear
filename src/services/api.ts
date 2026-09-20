@@ -1,5 +1,9 @@
 const TOKEN_KEY = 'asif_glass_admin_token';
 
+// In production (Vercel), VITE_API_URL points to the Render backend.
+// In local dev, it is empty so requests go to the Vite proxy (localhost:5000).
+const API_BASE = (import.meta.env.VITE_API_URL as string) || '';
+
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -26,7 +30,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     (headers as any)['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
   });
