@@ -9,11 +9,11 @@
     "dev": "node --watch index.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.7"
+    "multer": "^1.4.5-lts.1"
   }
 }
