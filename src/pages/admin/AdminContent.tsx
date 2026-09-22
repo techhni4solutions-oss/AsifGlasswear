@@ -7,21 +7,21 @@ const CONTENT_SECTIONS = [
     { key: "cta", label: "CTA Button Text", type: "text", value: "Get a Free Quote" },
   ]},
   { key: "stats", label: "Company Statistics", fields: [
-    { key: "years", label: "Years Experience", type: "text", value: "10+" },
-    { key: "projects", label: "Projects Completed", type: "text", value: "500+" },
-    { key: "clients", label: "Happy Clients", type: "text", value: "100+" },
-    { key: "team", label: "Expert Team", type: "text", value: "50+" },
+    { key: "years", label: "Years Experience", type: "text", value: "25+" },
+    { key: "projects", label: "Projects Completed", type: "text", value: "800+" },
+    { key: "clients", label: "Happy Clients", type: "text", value: "500+" },
+    { key: "team", label: "Expert Team", type: "text", value: "30+" },
   ]},
   { key: "about", label: "About Us", fields: [
-    { key: "about_text", label: "About Text", type: "textarea", value: "Asif Glass & Aluminium is a premium aluminium and glass solutions provider serving the UAE since 2014. We specialize in custom aluminium windows, doors, facades, glass partitions, railings, and shower cabins for residential and commercial clients." },
+    { key: "about_text", label: "About Text", type: "textarea", value: "Asif Glass & Aluminium is a premium aluminium and glass solutions provider serving Gujranwala and Punjab since 1998. We specialize in custom aluminium windows, doors, facades, glass partitions, railings, and shower cabins for residential and commercial clients." },
   ]},
   { key: "cta_section", label: "CTA Section", fields: [
     { key: "cta_heading", label: "CTA Heading", type: "text", value: "Have a Project in Mind?" },
     { key: "cta_sub", label: "CTA Subtext", type: "textarea", value: "Get a customized quotation for your Aluminium & Glass project." },
   ]},
   { key: "footer", label: "Footer", fields: [
-    { key: "footer_text", label: "Footer Tagline", type: "textarea", value: "Premium aluminium and glass solutions for UAE's finest residential and commercial projects since 2014." },
-    { key: "trn", label: "TRN Number", type: "text", value: "100-234-567-89012" },
+    { key: "footer_text", label: "Footer Tagline", type: "textarea", value: "Premium aluminium and glass solutions for residential and commercial projects across Punjab since 1998." },
+    { key: "trn", label: "TRN / NTN Number", type: "text", value: "100-234-567-89012" },
   ]},
 ];
 

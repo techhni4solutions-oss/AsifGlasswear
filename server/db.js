@@ -9,25 +9,44 @@ const client = createClient({
 
 // ─── Helper wrappers (same interface as before) ───────────────────────────────
 
+function sanitizeParams(params = []) {
+  return params.map((p) => (p === undefined || (typeof p === 'number' && Number.isNaN(p)) ? null : p));
+}
+
 export const dbRun = async (sql, params = []) => {
-  const result = await client.execute({ sql, args: params });
-  return { id: Number(result.lastInsertRowid), changes: result.rowsAffected };
+  const result = await client.execute({ sql, args: sanitizeParams(params) });
+  const id =
+    result.lastInsertRowid !== undefined && result.lastInsertRowid !== null
+      ? Number(result.lastInsertRowid)
+      : null;
+  return { id, changes: result.rowsAffected };
 };
 
 export const dbGet = async (sql, params = []) => {
-  const result = await client.execute({ sql, args: params });
+  const result = await client.execute({ sql, args: sanitizeParams(params) });
   if (!result.rows || result.rows.length === 0) return null;
-  // Convert libsql Row to plain object
-  return Object.fromEntries(
-    result.columns.map((col, i) => [col, result.rows[0][i]])
-  );
+  const row = result.rows[0];
+  const obj = {};
+  for (let i = 0; i < result.columns.length; i++) {
+    const col = result.columns[i];
+    const val = row[col] !== undefined ? row[col] : row[i];
+    obj[col] = typeof val === 'bigint' ? Number(val) : (val ?? null);
+  }
+  return obj;
 };
 
 export const dbAll = async (sql, params = []) => {
-  const result = await client.execute({ sql, args: params });
-  return result.rows.map((row) =>
-    Object.fromEntries(result.columns.map((col, i) => [col, row[i]]))
-  );
+  const result = await client.execute({ sql, args: sanitizeParams(params) });
+  if (!result.rows) return [];
+  return result.rows.map((row) => {
+    const obj = {};
+    for (let i = 0; i < result.columns.length; i++) {
+      const col = result.columns[i];
+      const val = row[col] !== undefined ? row[col] : row[i];
+      obj[col] = typeof val === 'bigint' ? Number(val) : (val ?? null);
+    }
+    return obj;
+  });
 };
 
 // ─── Init & seed ──────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useData } from "../../context/DataContext";
 
 const STATS = [
-  { value: "15+", label: "Years Experience" },
+  { value: "25+", label: "Years Experience" },
   { value: "800+", label: "Projects Completed" },
   { value: "500+", label: "Happy Clients" },
   { value: "30+", label: "Expert Team" },
@@ -85,7 +85,7 @@ export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjec
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs mb-6 border" style={{ borderColor: "rgba(201,169,110,0.3)", color: "var(--gold)", backgroundColor: "rgba(201,169,110,0.08)", fontFamily: "'JetBrains Mono',monospace" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Serving Gujranwala & Punjab Since 2009
+              Serving Gujranwala & Punjab Since 1998
             </div>
             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl leading-tight text-white mb-5">
               {settings.hero_title || "Premium Aluminium & Glass Solutions"}
@@ -133,14 +133,14 @@ export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjec
               <div className="font-mono text-xs tracking-widest uppercase mb-3" style={{ color: "var(--gold)" }}>About Us</div>
               <h2 className="font-serif text-3xl md:text-4xl mb-5">{settings.company_name}</h2>
               <p className="text-base leading-relaxed mb-4" style={{ color: "var(--muted-foreground)" }}>
-                Founded in Gujranwala, {settings.company_name} has been delivering premium aluminium and glass solutions across Punjab for over 15 years. From our modern workshop on Ghulam Dastagir Khan Road, we have grown into one of Pakistan's most trusted names in architectural glass and aluminium work.
+                Founded in Gujranwala, {settings.company_name} has been delivering premium aluminium and glass solutions across Punjab since 1998. From our modern workshop on Ghulam Dastagir Khan Road, we have grown into one of Pakistan's most trusted names in architectural glass and aluminium work.
               </p>
               <p className="text-base leading-relaxed mb-6" style={{ color: "var(--muted-foreground)" }}>
                 We specialise in custom windows, doors, sliding systems, glass partitions, shop fronts, building facades, shower cabins, and bespoke glass work — serving homeowners, architects, contractors, and commercial clients throughout Pakistan.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Established", value: "2009" },
+                  { label: "Established", value: "1998" },
                   { label: "Location", value: "Gujranwala, Pakistan" },
                   { label: "Specialty", value: "Aluminium & Glass" },
                   { label: "Phone", value: settings.phone },
@@ -460,7 +460,7 @@ export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjec
                 </div>
               </div>
               <p className="text-sm leading-relaxed max-w-xs mb-4" style={{ color: "rgba(245,244,240,0.5)" }}>
-                Premium aluminium and glass solutions for residential and commercial projects in Gujranwala and across Punjab since 2009.
+                Premium aluminium and glass solutions for residential and commercial projects in Gujranwala and across Punjab since 1998.
               </p>
               <p className="text-xs" style={{ color: "rgba(245,244,240,0.35)", fontFamily: "'JetBrains Mono',monospace" }}>
                 {settings.address}

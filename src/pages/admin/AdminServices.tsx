@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useData } from "../../context/DataContext";
-import { api } from "../../services/api";
+import { api, getImageUrl } from "../../services/api";
 
 export default function AdminServices() {
   const { services, addService, updateService, deleteService } = useData();
@@ -85,7 +85,7 @@ export default function AdminServices() {
         {services.map((svc) => (
           <div key={svc.id} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: "#e2ddd6" }}>
             <div className="aspect-video overflow-hidden">
-              <img src={svc.image} alt={svc.name} className="w-full h-full object-cover" />
+              <img src={getImageUrl(svc.image)} alt={svc.name} className="w-full h-full object-cover" />
             </div>
             <div className="p-5">
               <div className="flex items-start justify-between gap-2 mb-2">
@@ -142,7 +142,7 @@ export default function AdminServices() {
                 className="w-full px-3 py-2.5 rounded-lg border text-sm"
                 style={{ borderColor: "#e2ddd6", backgroundColor: "#f8f7f4" }}
               />
-              {form.image && <img src={form.image} alt="Preview" className="mt-2 h-20 rounded-lg object-cover" />}
+              {form.image && <img src={getImageUrl(form.image)} alt="Preview" className="mt-2 h-20 rounded-lg object-cover" />}
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1.5">Detailed Description</label>

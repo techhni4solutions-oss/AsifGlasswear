@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useData } from "../../context/DataContext";
+import { getImageUrl } from "../../services/api";
 
 type InquiryStatus = "All" | "New" | "Contacted" | "Quoted" | "Completed" | "Rejected";
 
@@ -181,9 +182,18 @@ export default function AdminInquiries() {
               {selected.attachment && (
                 <div className="mb-4">
                   <div className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "#777770" }}>Attachment / Design Photo</div>
-                  <a href={selected.attachment} target="_blank" rel="noopener noreferrer" className="inline-block border p-2 rounded-lg hover:border-amber-400">
-                    <img src={selected.attachment} alt="Design photo" className="h-32 rounded object-cover" />
-                    <span className="text-xs text-blue-600 underline block mt-1">Open full image ↗</span>
+                  <a
+                    href={getImageUrl(selected.attachment)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block border p-2 rounded-lg hover:border-amber-400 max-w-full"
+                  >
+                    <img
+                      src={getImageUrl(selected.attachment)}
+                      alt="Design photo"
+                      className="h-40 max-w-full rounded object-contain bg-gray-50"
+                    />
+                    <span className="text-xs text-blue-600 underline block mt-1.5 font-medium">Open full image ↗</span>
                   </a>
                 </div>
               )}

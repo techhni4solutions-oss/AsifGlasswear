@@ -41,23 +41,45 @@ router.post('/', async (req, res) => {
       'New'
     ]);
 
-    // Automatically check or create/update Customer record
-    const existingCustomer = await dbGet('SELECT * FROM customers WHERE phone = ? OR (email != "" AND email = ?)', [phone, email || '___never___']);
-    if (existingCustomer) {
-      await dbRun(`
-        UPDATE customers
-        SET projects = projects + 1, lastInquiry = ?, status = 'Active'
-        WHERE id = ?
-      `, [todayStr, existingCustomer.id]);
-    } else {
-      await dbRun(`
-        INSERT INTO customers (name, phone, email, projects, lastInquiry, status)
-        VALUES (?, ?, ?, 1, ?, 'Active')
-      `, [name, phone, email || '', todayStr]);
+    // Automatically check or create/update Customer record (non-blocking for inquiry submission)
+    try {
+      const existingCustomer = await dbGet('SELECT * FROM customers WHERE phone = ? OR (email != "" AND email = ?)', [phone, email || '___never___']);
+      if (existingCustomer && existingCustomer.id) {
+        await dbRun(`
+          UPDATE customers
+          SET projects = projects + 1, lastInquiry = ?, status = 'Active'
+          WHERE id = ?
+        `, [todayStr, existingCustomer.id]);
+      } else {
+        await dbRun(`
+          INSERT INTO customers (name, phone, email, projects, lastInquiry, status)
+          VALUES (?, ?, ?, 1, ?, 'Active')
+        `, [name, phone, email || '', todayStr]);
+      }
+    } catch (custErr) {
+      console.warn('Could not update customer record (inquiry still saved):', custErr.message);
     }
 
-    const created = await dbGet('SELECT * FROM inquiries WHERE id = ?', [result.id]);
-    res.status(201).json(created);
+    let created = null;
+    if (result && result.id) {
+      created = await dbGet('SELECT * FROM inquiries WHERE id = ?', [result.id]);
+    }
+    if (!created) {
+      created = await dbGet('SELECT * FROM inquiries ORDER BY id DESC LIMIT 1');
+    }
+
+    res.status(201).json(created || {
+      id: result?.id || Date.now(),
+      name,
+      phone,
+      email: email || '',
+      projectType,
+      location: location || '',
+      message: message || '',
+      attachment: attachment || '',
+      date: todayStr,
+      status: 'New'
+    });
   } catch (err) {
     console.error('Error creating inquiry:', err);
     res.status(500).json({ error: 'Failed to submit inquiry' });

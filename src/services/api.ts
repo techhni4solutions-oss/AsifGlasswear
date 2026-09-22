@@ -2,7 +2,22 @@ const TOKEN_KEY = 'asif_glass_admin_token';
 
 // In production (Vercel), VITE_API_URL points to the Render backend.
 // In local dev, it is empty so requests go to the Vite proxy (localhost:5000).
-const API_BASE = (import.meta.env.VITE_API_URL as string) || '';
+export const API_BASE = (import.meta.env.VITE_API_URL as string) || '';
+
+// Fallback backend URL if VITE_API_URL is unset
+const BACKEND_FALLBACK = 'https://asifglasswear.onrender.com';
+
+export function getImageUrl(url?: string | null): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const base = API_BASE || BACKEND_FALLBACK;
+  if (url.startsWith('/')) {
+    return `${base}${url}`;
+  }
+  return `${base}/${url}`;
+}
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
