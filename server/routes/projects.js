@@ -4,14 +4,24 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
+function safeJsonParse(val, fallback = []) {
+  if (!val) return fallback;
+  if (Array.isArray(val)) return val;
+  try {
+    return JSON.parse(val);
+  } catch (e) {
+    return fallback;
+  }
+}
+
 function formatProject(p) {
   if (!p) return null;
   return {
     ...p,
     featured: Boolean(p.featured),
-    gallery: p.gallery ? JSON.parse(p.gallery) : [],
-    services: p.services ? JSON.parse(p.services) : [],
-    materials: p.materials ? JSON.parse(p.materials) : []
+    gallery: safeJsonParse(p.gallery, []),
+    services: safeJsonParse(p.services, []),
+    materials: safeJsonParse(p.materials, [])
   };
 }
 
@@ -63,7 +73,13 @@ router.post('/', authenticateToken, async (req, res) => {
       JSON.stringify(materials || [])
     ]);
 
-    const created = await dbGet('SELECT * FROM projects WHERE id = ?', [result.id]);
+    let created = null;
+    if (result && result.id) {
+      created = await dbGet('SELECT * FROM projects WHERE id = ?', [result.id]);
+    }
+    if (!created) {
+      created = await dbGet('SELECT * FROM projects ORDER BY id DESC LIMIT 1');
+    }
     res.status(201).json(formatProject(created));
   } catch (err) {
     console.error('Error creating project:', err);
