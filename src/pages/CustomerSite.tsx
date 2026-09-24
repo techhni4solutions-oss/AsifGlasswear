@@ -182,7 +182,6 @@ export default function CustomerSite({ onAdminClick }: Props) {
               setQuoteProjectType(serviceName);
               navigate("contact");
             }}
-            onProjectClick={openProject}
           />
         )}
 

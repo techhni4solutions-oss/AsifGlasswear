@@ -16,7 +16,6 @@ interface Props {
   service: Service;
   onBack: () => void;
   onGetQuote: (serviceName: string) => void;
-  onProjectClick: (projectId: number) => void;
 }
 
 // Technical highlights and features based on service name
@@ -62,8 +61,8 @@ function getServiceFeatures(serviceName: string) {
   ];
 }
 
-export default function ServiceDetailPage({ service, onBack, onGetQuote, onProjectClick }: Props) {
-  const { projects, settings } = useData();
+export default function ServiceDetailPage({ service, onBack, onGetQuote }: Props) {
+  const { settings } = useData();
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -150,14 +149,6 @@ export default function ServiceDetailPage({ service, onBack, onGetQuote, onProje
   )}`;
 
   const features = getServiceFeatures(service.name);
-
-  // Find related projects that used this service
-  const relatedProjects = projects.filter((p) => {
-    const sList = Array.isArray(p.services) ? p.services : [];
-    const matchService = sList.some((s: string) => s.toLowerCase().includes(service.name.toLowerCase()) || service.name.toLowerCase().includes(s.toLowerCase()));
-    const matchCategory = p.category?.toLowerCase() === service.name.toLowerCase() || p.type?.toLowerCase() === service.name.toLowerCase();
-    return matchService || matchCategory;
-  }).slice(0, 3);
 
   const goToSlide = (idx: number) => setCurrentSlide(idx);
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % allImages.length);
@@ -349,42 +340,6 @@ export default function ServiceDetailPage({ service, onBack, onGetQuote, onProje
           </div>
         </div>
 
-        {/* Related Projects Section */}
-        {relatedProjects.length > 0 && (
-          <div className="mt-16 pt-12 border-t" style={{ borderColor: "var(--border)" }}>
-            <div className="flex items-end justify-between mb-8">
-              <div>
-                <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "var(--gold)" }}>Completed Installations</div>
-                <h3 className="font-serif text-2xl md:text-3xl">Projects Featuring {service.name}</h3>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {relatedProjects.map((proj) => (
-                <div
-                  key={proj.id}
-                  onClick={() => onProjectClick(proj.id)}
-                  className="rounded-2xl overflow-hidden border group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg bg-white"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <div className="aspect-video overflow-hidden relative">
-                    <img
-                      src={getImageUrl(proj.image)}
-                      alt={proj.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-black/70 text-white backdrop-blur-sm">
-                      {proj.category}
-                    </span>
-                  </div>
-                  <div className="p-4">
-                    <div className="font-semibold text-sm group-hover:text-amber-600 transition-colors">{proj.name}</div>
-                    <div className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>📍 {proj.location}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Fullscreen Zoom Modal with Slideshow */}
