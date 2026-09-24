@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import { useData } from "../../context/DataContext";
-import { api } from "../../services/api";
+
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
+
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("The selected image could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
 
 const PROJECT_TYPES = [
   "Aluminium Windows", "Aluminium Doors", "Sliding Doors", "Glass Doors",
@@ -49,8 +59,16 @@ export default function ContactPage({ initialProjectType }: ContactProps = {}) {
     try {
       let attachmentUrl = "";
       if (selectedFile) {
-        const uploadRes = await api.uploadFile(selectedFile);
-        attachmentUrl = uploadRes.url;
+        if (!selectedFile.type.startsWith("image/")) {
+          throw new Error("Please select a valid image file.");
+        }
+        if (selectedFile.size > MAX_ATTACHMENT_SIZE) {
+          throw new Error("Please select an image smaller than 5 MB.");
+        }
+
+        // Save the image data with the inquiry instead of using a temporary
+        // Render filesystem URL that disappears when the server sleeps.
+        attachmentUrl = await readImageAsDataUrl(selectedFile);
       }
 
       await submitInquiry({
@@ -229,12 +247,21 @@ export default function ContactPage({ initialProjectType }: ContactProps = {}) {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > MAX_ATTACHMENT_SIZE) {
+                      alert("Please select an image smaller than 5 MB.");
+                      e.target.value = "";
+                      setSelectedFile(null);
+                      return;
+                    }
+                    setSelectedFile(file);
+                  }}
                   className="w-full px-4 py-3 rounded-xl border text-sm"
                   style={{ borderColor: "var(--border)", backgroundColor: "var(--background)", color: "var(--foreground)" }}
                 />
                 <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
-                  Upload a photo of your space or a design idea to help us understand your requirements better.
+                  Upload a photo of your space or design idea (maximum 5 MB). It will be saved permanently with your inquiry.
                 </p>
               </div>
 

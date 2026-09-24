@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useData } from "../../context/DataContext";
 import { getImageUrl } from "../../services/api";
 
@@ -16,6 +16,11 @@ export default function AdminInquiries() {
   const { inquiries, updateInquiryStatus, deleteInquiry } = useData();
   const [filter, setFilter] = useState<InquiryStatus>("All");
   const [selected, setSelected] = useState<any | null>(null);
+  const [attachmentLoadFailed, setAttachmentLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setAttachmentLoadFailed(false);
+  }, [selected?.id, selected?.attachment]);
 
   const filtered = filter === "All" ? inquiries : inquiries.filter((i) => i.status === filter);
 
@@ -182,19 +187,26 @@ export default function AdminInquiries() {
               {selected.attachment && (
                 <div className="mb-4">
                   <div className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "#777770" }}>Attachment / Design Photo</div>
-                  <a
-                    href={getImageUrl(selected.attachment)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block border p-2 rounded-lg hover:border-amber-400 max-w-full"
-                  >
-                    <img
-                      src={getImageUrl(selected.attachment)}
-                      alt="Design photo"
-                      className="h-40 max-w-full rounded object-contain bg-gray-50"
-                    />
-                    <span className="text-xs text-blue-600 underline block mt-1.5 font-medium">Open full image ↗</span>
-                  </a>
+                  {attachmentLoadFailed ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                      This older attachment is no longer available. New inquiry photos are stored permanently.
+                    </div>
+                  ) : (
+                    <a
+                      href={getImageUrl(selected.attachment)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block border p-2 rounded-lg hover:border-amber-400 max-w-full"
+                    >
+                      <img
+                        src={getImageUrl(selected.attachment)}
+                        alt="Customer's design or room photo"
+                        onError={() => setAttachmentLoadFailed(true)}
+                        className="h-40 max-w-full rounded object-contain bg-gray-50"
+                      />
+                      <span className="text-xs text-blue-600 underline block mt-1.5 font-medium">Open full image ↗</span>
+                    </a>
+                  )}
                 </div>
               )}
 
