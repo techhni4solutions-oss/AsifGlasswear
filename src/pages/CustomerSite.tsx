@@ -4,22 +4,26 @@ import MobileBottomBar from "../components/customer/MobileBottomBar";
 import HomePage from "./customer/HomePage";
 import ProjectsPage from "./customer/ProjectsPage";
 import ProjectDetailPage from "./customer/ProjectDetailPage";
+import ServiceDetailPage from "./customer/ServiceDetailPage";
 import ContactPage from "./customer/ContactPage";
 import { useData } from "../context/DataContext";
 
-export type CustomerPage = "home" | "projects" | "project-detail" | "contact";
+export type CustomerPage = "home" | "projects" | "project-detail" | "service-detail" | "contact";
 
 interface Props {
   onAdminClick: () => void;
 }
 
 export default function CustomerSite({ onAdminClick }: Props) {
-  const { projects, settings } = useData();
+  const { projects, services, settings } = useData();
   const [page, setPage] = useState<CustomerPage>("home");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [quoteProjectType, setQuoteProjectType] = useState<string>("");
   const [pendingSection, setPendingSection] = useState<string | null>(null);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
+  const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
 
   const cleanPhone = settings.whatsapp ? settings.whatsapp.replace(/[^0-9]/g, "") : "923066426139";
   const whatsappUrl = `https://wa.me/${cleanPhone}`;
@@ -56,24 +60,61 @@ export default function CustomerSite({ onAdminClick }: Props) {
           <HomePage
             onMount={onPageReady}
             onViewProjects={() => navigate("projects")}
-            onGetQuote={() => navigate("contact")}
-            onProjectClick={(id) => { setSelectedProjectId(id); navigate("project-detail"); }}
+            onGetQuote={() => {
+              setQuoteProjectType("");
+              navigate("contact");
+            }}
+            onProjectClick={(id) => {
+              setSelectedProjectId(id);
+              navigate("project-detail");
+            }}
+            onServiceClick={(id) => {
+              setSelectedServiceId(id);
+              navigate("service-detail");
+            }}
           />
         )}
+
         {page === "projects" && (
           <ProjectsPage
-            onProjectClick={(id) => { setSelectedProjectId(id); navigate("project-detail"); }}
-            onGetQuote={() => navigate("contact")}
+            onProjectClick={(id) => {
+              setSelectedProjectId(id);
+              navigate("project-detail");
+            }}
+            onGetQuote={() => {
+              setQuoteProjectType("");
+              navigate("contact");
+            }}
           />
         )}
+
         {page === "project-detail" && selectedProject && (
           <ProjectDetailPage
             project={selectedProject}
             onBack={() => navigate("projects")}
-            onGetQuote={() => navigate("contact")}
+            onGetQuote={() => {
+              setQuoteProjectType(selectedProject.type || selectedProject.category || "");
+              navigate("contact");
+            }}
           />
         )}
-        {page === "contact" && <ContactPage />}
+
+        {page === "service-detail" && selectedService && (
+          <ServiceDetailPage
+            service={selectedService}
+            onBack={() => navigate("home", "services")}
+            onGetQuote={(serviceName) => {
+              setQuoteProjectType(serviceName);
+              navigate("contact");
+            }}
+            onProjectClick={(id) => {
+              setSelectedProjectId(id);
+              navigate("project-detail");
+            }}
+          />
+        )}
+
+        {page === "contact" && <ContactPage initialProjectType={quoteProjectType} />}
       </main>
 
       <MobileBottomBar />

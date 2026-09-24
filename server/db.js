@@ -89,6 +89,7 @@ export async function initDb() {
         icon TEXT NOT NULL,
         description TEXT NOT NULL,
         image TEXT NOT NULL,
+        images TEXT DEFAULT '[]',
         status TEXT DEFAULT 'Active',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -140,6 +141,14 @@ export async function initDb() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
     ], 'deferred');
+
+    // ── Migrations: add columns that may not exist on older databases ──
+    try {
+      await client.execute('ALTER TABLE services ADD COLUMN images TEXT DEFAULT \'[]\'');
+      console.log('Migration: added images column to services');
+    } catch (_) {
+      // Column already exists — ignore
+    }
 
     await seedData();
     isInitialized = true;

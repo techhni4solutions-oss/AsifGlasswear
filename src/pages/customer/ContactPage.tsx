@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useData } from "../../context/DataContext";
 import { api } from "../../services/api";
 
@@ -8,15 +8,30 @@ const PROJECT_TYPES = [
   "Shower Cabin", "Custom Glass Work", "Other",
 ];
 
-export default function ContactPage() {
+interface ContactProps {
+  initialProjectType?: string;
+}
+
+export default function ContactPage({ initialProjectType }: ContactProps = {}) {
   const { settings, submitInquiry } = useData();
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
-    name: "", phone: "", email: "", projectType: "", location: "", message: "",
+    name: "",
+    phone: "",
+    email: "",
+    projectType: initialProjectType || "",
+    location: "",
+    message: "",
   });
+
+  useEffect(() => {
+    if (initialProjectType) {
+      setForm((prev) => ({ ...prev, projectType: initialProjectType }));
+    }
+  }, [initialProjectType]);
 
   const mapLat = settings.map_lat || 32.1577;
   const mapLon = settings.map_lon || 74.1945;

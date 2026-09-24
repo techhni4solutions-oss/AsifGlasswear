@@ -1,30 +1,10 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.resolve(__dirname, '../uploads');
-
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
-});
-
+// Use memory storage so we can convert to base64 data URI.
+// This ensures images survive Render's ephemeral filesystem restarts.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
@@ -35,10 +15,14 @@ router.post('/', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-  const host = req.get('host');
-  const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl, filename: req.file.filename });
+
+  // Convert file buffer to a base64 data URI so the image data lives
+  // inside the database record instead of on the ephemeral filesystem.
+  const mimeType = req.file.mimetype || 'image/jpeg';
+  const base64 = req.file.buffer.toString('base64');
+  const dataUri = `data:${mimeType};base64,${base64}`;
+
+  res.json({ url: dataUri, filename: req.file.originalname });
 });
 
 export default router;

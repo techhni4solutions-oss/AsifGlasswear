@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useData } from "../../context/DataContext";
+import { getImageUrl } from "../../services/api";
 
 const STATS = [
   { value: "25+", label: "Years Experience" },
@@ -28,9 +29,10 @@ interface Props {
   onViewProjects: () => void;
   onGetQuote: () => void;
   onProjectClick: (id: number) => void;
+  onServiceClick: (id: number) => void;
 }
 
-export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjectClick }: Props) {
+export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjectClick, onServiceClick }: Props) {
   const { projects, services, testimonials, settings, addTestimonial } = useData();
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
@@ -182,16 +184,31 @@ export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjec
           {activeServices.map((svc) => (
             <div
               key={svc.id}
-              className="snap-start flex-shrink-0 w-44 md:w-auto rounded-xl overflow-hidden border group cursor-pointer transition-all hover:-translate-y-1"
+              onClick={() => onServiceClick(svc.id)}
+              className="snap-start flex-shrink-0 w-44 md:w-auto rounded-xl overflow-hidden border group cursor-pointer transition-all hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg"
               style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
             >
-              <div className="aspect-video md:aspect-square overflow-hidden">
-                <img src={svc.image} alt={svc.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="aspect-video md:aspect-square overflow-hidden relative">
+                <img
+                  src={getImageUrl(svc.image)}
+                  alt={svc.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  Learn More →
+                </span>
               </div>
               <div className="p-3 md:p-4">
                 <div className="text-lg mb-1">{svc.icon}</div>
-                <div className="font-semibold text-sm leading-tight">{svc.name}</div>
-                <div className="text-xs mt-1 leading-relaxed hidden md:block" style={{ color: "var(--muted-foreground)" }}>{svc.description ? svc.description.slice(0, 70) : ''}...</div>
+                <div className="font-semibold text-sm leading-tight group-hover:text-amber-600 transition-colors">
+                  {svc.name}
+                </div>
+                <div className="text-xs mt-1 leading-relaxed hidden md:block" style={{ color: "var(--muted-foreground)" }}>
+                  {svc.description ? svc.description.slice(0, 70) : ''}...
+                </div>
+                <div className="text-xs text-amber-600 font-medium mt-2 flex items-center gap-1 group-hover:underline">
+                  View Details →
+                </div>
               </div>
             </div>
           ))}
@@ -470,7 +487,14 @@ export default function HomePage({ onMount, onViewProjects, onGetQuote, onProjec
               <div className="text-sm font-semibold text-white mb-4">Services</div>
               <div className="flex flex-col gap-2">
                 {activeServices.slice(0, 6).map((s) => (
-                  <span key={s.id} className="text-sm" style={{ color: "rgba(245,244,240,0.45)" }}>{s.name}</span>
+                  <button
+                    key={s.id}
+                    onClick={() => onServiceClick(s.id)}
+                    className="text-sm text-left hover:text-amber-400 transition-colors"
+                    style={{ color: "rgba(245,244,240,0.55)" }}
+                  >
+                    {s.name}
+                  </button>
                 ))}
               </div>
             </div>
