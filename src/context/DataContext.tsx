@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { api, getAuthToken } from '../services/api';
+import { readPublicDataCache, writePublicDataCache } from '../services/dataCache';
 
 export type SiteSettings = {
   id?: number;
@@ -78,21 +79,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<any[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [cacheReady, setCacheReady] = useState(false);
 
   const refreshData = useCallback(async () => {
     try {
       setLoading(true);
       const [pData, sData, tData, stData] = await Promise.all([
-        api.getProjects().catch(() => []),
-        api.getServices().catch(() => []),
-        api.getTestimonials().catch(() => []),
-        api.getSettings().catch(() => DEFAULT_SETTINGS),
+        api.getProjects(),
+        api.getServices(),
+        api.getTestimonials(),
+        api.getSettings(),
       ]);
 
       setProjects(pData);
       setServices(sData);
       setTestimonials(tData);
       if (stData) setSettings(stData);
+
+      void writePublicDataCache({
+        projects: pData,
+        services: sData,
+        testimonials: tData,
+        settings: stData || DEFAULT_SETTINGS,
+      });
 
       // If logged in as admin, also fetch protected inquiries and customers
       if (getAuthToken()) {
@@ -111,8 +120,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshData();
+    let active = true;
+
+    void (async () => {
+      const cached = await readPublicDataCache();
+      if (!active) return;
+
+      if (cached) {
+        setProjects(cached.projects || []);
+        setServices(cached.services || []);
+        setTestimonials(cached.testimonials || []);
+        if (cached.settings) setSettings(cached.settings);
+        setLoading(false);
+      }
+
+      setCacheReady(true);
+      void refreshData();
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [refreshData]);
+
+  // Keep the fast-start snapshot current after admin edits as well as API refreshes.
+  useEffect(() => {
+    if (!cacheReady) return;
+    void writePublicDataCache({ projects, services, testimonials, settings });
+  }, [cacheReady, projects, services, testimonials, settings]);
 
   // Project CRUD
   const addProject = async (data: any) => {
