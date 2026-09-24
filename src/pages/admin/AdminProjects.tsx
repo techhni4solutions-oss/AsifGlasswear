@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useData } from "../../context/DataContext";
-import { api, getImageUrl } from "../../services/api";
+import { getImageUrl } from "../../services/api";
+
+const MAX_PROJECT_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_PROJECT_UPLOAD_BATCH_SIZE = 7 * 1024 * 1024;
+
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.readAsDataURL(file);
+  });
+}
 
 type ProjectForm = {
   name: string;
@@ -84,9 +96,19 @@ export default function AdminProjects() {
     setUploading(true);
     try {
       const fileList = Array.from(files);
-      const uploadPromises = fileList.map((file) => api.uploadFile(file));
-      const results = await Promise.all(uploadPromises);
-      const uploadedUrls = results.map((r) => r.url).filter(Boolean);
+      const invalidFile = fileList.find((file) => !file.type.startsWith("image/"));
+      const oversizedFile = fileList.find((file) => file.size > MAX_PROJECT_IMAGE_SIZE);
+      const batchSize = fileList.reduce((total, file) => total + file.size, 0);
+
+      if (invalidFile) throw new Error(`${invalidFile.name} is not a valid image.`);
+      if (oversizedFile) throw new Error(`${oversizedFile.name} is larger than 5 MB.`);
+      if (batchSize > MAX_PROJECT_UPLOAD_BATCH_SIZE) {
+        throw new Error("Please upload a maximum of 7 MB at one time.");
+      }
+
+      // Keep project photos inside the persistent database record. This avoids
+      // temporary Render filesystem URLs that disappear after server sleep.
+      const uploadedUrls = await Promise.all(fileList.map(readImageAsDataUrl));
 
       setForm((prev) => ({
         ...prev,

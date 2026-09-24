@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CustomerHeader from "../components/customer/CustomerHeader";
 import MobileBottomBar from "../components/customer/MobileBottomBar";
 import HomePage from "./customer/HomePage";
@@ -10,17 +10,48 @@ import { useData } from "../context/DataContext";
 
 export type CustomerPage = "home" | "projects" | "project-detail" | "service-detail" | "contact";
 
+type CustomerLocation = {
+  page: CustomerPage;
+  projectId: number | null;
+  serviceId: number | null;
+  section: string | null;
+};
+
+function readCustomerLocation(): CustomerLocation {
+  const hash = window.location.hash.replace(/^#/, "");
+  const [route, rawId] = hash.split("/");
+  const id = Number(rawId);
+
+  if (route === "projects") return { page: "projects", projectId: null, serviceId: null, section: null };
+  if (route === "project" && Number.isFinite(id)) return { page: "project-detail", projectId: id, serviceId: null, section: null };
+  if (route === "service" && Number.isFinite(id)) return { page: "service-detail", projectId: null, serviceId: id, section: null };
+  if (route === "contact") return { page: "contact", projectId: null, serviceId: null, section: null };
+  if (route === "about" || route === "services") return { page: "home", projectId: null, serviceId: null, section: route };
+  return { page: "home", projectId: null, serviceId: null, section: null };
+}
+
+function locationHash(page: CustomerPage, section?: string, projectId?: number | null, serviceId?: number | null) {
+  if (page === "projects") return "#projects";
+  if (page === "project-detail" && projectId) return `#project/${projectId}`;
+  if (page === "service-detail" && serviceId) return `#service/${serviceId}`;
+  if (page === "contact") return "#contact";
+  if (section) return `#${section}`;
+  return "#home";
+}
+
 interface Props {
   onAdminClick: () => void;
 }
 
 export default function CustomerSite({ onAdminClick }: Props) {
   const { projects, services, settings } = useData();
-  const [page, setPage] = useState<CustomerPage>("home");
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const initialLocation = readCustomerLocation();
+  const [page, setPage] = useState<CustomerPage>(initialLocation.page);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(initialLocation.projectId);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(initialLocation.serviceId);
   const [quoteProjectType, setQuoteProjectType] = useState<string>("");
-  const [pendingSection, setPendingSection] = useState<string | null>(null);
+  const [pendingSection, setPendingSection] = useState<string | null>(initialLocation.section);
+  const [activeSection, setActiveSection] = useState<string | null>(initialLocation.section);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
   const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
@@ -28,13 +59,65 @@ export default function CustomerSite({ onAdminClick }: Props) {
   const cleanPhone = settings.whatsapp ? settings.whatsapp.replace(/[^0-9]/g, "") : "923066426139";
   const whatsappUrl = `https://wa.me/${cleanPhone}`;
 
+  const applyLocation = (location: CustomerLocation) => {
+    setPage(location.page);
+    setSelectedProjectId(location.projectId);
+    setSelectedServiceId(location.serviceId);
+    setPendingSection(location.section);
+    setActiveSection(location.section);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  useEffect(() => {
+    const handleHistoryNavigation = () => applyLocation(readCustomerLocation());
+    window.addEventListener("popstate", handleHistoryNavigation);
+    window.addEventListener("hashchange", handleHistoryNavigation);
+    return () => {
+      window.removeEventListener("popstate", handleHistoryNavigation);
+      window.removeEventListener("hashchange", handleHistoryNavigation);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (page !== "home" || !pendingSection) return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(pendingSection);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        setPendingSection(null);
+      }
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [page, pendingSection]);
+
   const navigate = (p: CustomerPage | string, section?: string) => {
     const targetPage = p as CustomerPage;
-    window.scrollTo({ top: 0, behavior: "instant" });
-    setPage(targetPage);
-    if (section) {
-      setPendingSection(section);
+    const nextHash = locationHash(targetPage, section, selectedProjectId, selectedServiceId);
+    if (window.location.hash !== nextHash) {
+      window.history.pushState({}, "", nextHash);
     }
+    setPage(targetPage);
+    setPendingSection(section || null);
+    setActiveSection(section || null);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const openProject = (id: number) => {
+    setSelectedProjectId(id);
+    setSelectedServiceId(null);
+    setActiveSection(null);
+    window.history.pushState({}, "", locationHash("project-detail", undefined, id, null));
+    setPage("project-detail");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const openService = (id: number) => {
+    setSelectedServiceId(id);
+    setSelectedProjectId(null);
+    setActiveSection(null);
+    window.history.pushState({}, "", locationHash("service-detail", undefined, null, id));
+    setPage("service-detail");
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const onPageReady = () => {
@@ -51,6 +134,7 @@ export default function CustomerSite({ onAdminClick }: Props) {
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
       <CustomerHeader
         currentPage={page}
+        currentSection={activeSection}
         onNavigate={(p, section) => navigate(p, section)}
         onAdminClick={onAdminClick}
       />
@@ -64,23 +148,14 @@ export default function CustomerSite({ onAdminClick }: Props) {
               setQuoteProjectType("");
               navigate("contact");
             }}
-            onProjectClick={(id) => {
-              setSelectedProjectId(id);
-              navigate("project-detail");
-            }}
-            onServiceClick={(id) => {
-              setSelectedServiceId(id);
-              navigate("service-detail");
-            }}
+            onProjectClick={openProject}
+            onServiceClick={openService}
           />
         )}
 
         {page === "projects" && (
           <ProjectsPage
-            onProjectClick={(id) => {
-              setSelectedProjectId(id);
-              navigate("project-detail");
-            }}
+            onProjectClick={openProject}
             onGetQuote={() => {
               setQuoteProjectType("");
               navigate("contact");
@@ -107,10 +182,7 @@ export default function CustomerSite({ onAdminClick }: Props) {
               setQuoteProjectType(serviceName);
               navigate("contact");
             }}
-            onProjectClick={(id) => {
-              setSelectedProjectId(id);
-              navigate("project-detail");
-            }}
+            onProjectClick={openProject}
           />
         )}
 

@@ -11,11 +11,12 @@ const NAV_ITEMS = [
 
 interface Props {
   currentPage: string;
+  currentSection?: string | null;
   onNavigate: (page: string, section?: string) => void;
   onAdminClick?: () => void;
 }
 
-export default function CustomerHeader({ currentPage, onNavigate }: Props) {
+export default function CustomerHeader({ currentPage, currentSection, onNavigate }: Props) {
   const { settings } = useData();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -56,14 +57,21 @@ export default function CustomerHeader({ currentPage, onNavigate }: Props) {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-5">
             {NAV_ITEMS.map((item) => (
+              (() => {
+                const isActive = currentPage === item.page && (
+                  item.page !== "home" || item.section === currentSection || (!item.section && !currentSection)
+                );
+                return (
               <button
                 key={item.label}
                 onClick={() => handleNav(item)}
                 className="text-sm font-medium transition-colors hover:opacity-100"
-                style={{ color: currentPage === item.page ? "var(--gold)" : "var(--muted-foreground)", opacity: currentPage === item.page ? 1 : 0.8 }}
+                style={{ color: isActive ? "var(--gold)" : "var(--muted-foreground)", opacity: isActive ? 1 : 0.8 }}
               >
                 {item.label}
               </button>
+                );
+              })()
             ))}
           </nav>
 
